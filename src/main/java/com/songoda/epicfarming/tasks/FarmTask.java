@@ -13,6 +13,7 @@ import com.songoda.third_party.com.cryptomorin.xseries.XMaterial;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
+import org.bukkit.block.data.Ageable;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -30,7 +31,6 @@ import java.util.stream.Collectors;
 
 public class FarmTask extends BukkitRunnable {
     private final EpicFarming plugin;
-
     private final Map<UUID, Collection<LivingEntity>> entityCache = new HashMap<>();
 
     public FarmTask(EpicFarming plugin) {
@@ -55,25 +55,30 @@ public class FarmTask extends BukkitRunnable {
                     for (int fy = -2; fy <= 1; fy++) {
                         for (int fz = -radius; fz <= radius; fz++) {
                             Block b2 = block.getWorld().getBlockAt(bx + fx, by + fy, bz + fz);
-                            Optional<XMaterial> mat = CompatibleMaterial.getMaterial(b2.getType());
-
-                            if (!mat.isPresent() || (!XBlock.isCrop(mat.get()) && mat.get() != XMaterial.SWEET_BERRY_BUSH)) {
+                            if (!(b2.getBlockData() instanceof Ageable)) {
                                 continue;
                             }
-
+                            Optional<XMaterial> mat = CompatibleMaterial.getMaterial(b2.getType());
+                            if (!mat.isPresent()) {
+                                continue;
+                            }
+                            if (!XBlock.isCrop(mat.get()) && mat.get() != XMaterial.SWEET_BERRY_BUSH) {
+                                continue;
+                            }
                             if (add) {
                                 farm.addCachedCrop(b2);
                                 continue;
                             }
                             farm.removeCachedCrop(b2);
-                            this.plugin.getGrowthTask().removeCropByLocation(b2.getLocation());
+                            plugin.getGrowthTask().removeCropByLocation(b2.getLocation());
                         }
                     }
                 }
             });
         }
 
-        return farm.getCachedCrops();
+        List<Block> cached = farm.getCachedCrops();
+        return cached;
     }
 
     @Override

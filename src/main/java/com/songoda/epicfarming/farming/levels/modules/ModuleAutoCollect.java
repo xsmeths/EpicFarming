@@ -64,15 +64,21 @@ public class ModuleAutoCollect extends Module {
     }
 
     private void collectCrops(Farm farm, List<Block> crops) {
+        List<Block> toRemove = new ArrayList<>();
         for (Block block : crops) {
             if (CropUtils.isFullyGrown(block) && isEnabled(farm) && doCropDrop(farm, CompatibleMaterial.getMaterial(block.getType()).get())) {
                 if (farm.getLevel().isAutoReplant()) {
                     Bukkit.getScheduler().runTask(this.plugin, () -> CropUtils.resetGrowthStage(block));
+                    toRemove.add(block);
                     continue;
                 }
                 Bukkit.getScheduler().runTask(this.plugin, () -> block.setType(Material.AIR));
+                toRemove.add(block);
             }
         }
+
+        // Remove processed crops
+        crops.removeAll(toRemove);
     }
 
     private void collectLivestock(Farm farm, Collection<LivingEntity> entitiesAroundFarm) {
